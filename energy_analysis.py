@@ -104,3 +104,86 @@ plt.grid(axis='y', linestyle='--', alpha=0.7)
 
 # Відображення графіка
 plt.show()
+
+import seaborn as sns
+
+# Видаляємо колонку Date, оскільки вона не є числовою
+df_corr = df_sample.drop(columns=['Date'])
+
+# Обчислення кореляційної матриці
+correlation_matrix = df_corr.corr()
+
+# Побудова heatmap (теплової карти кореляції)
+plt.figure(figsize=(10, 6))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+
+# Налаштування
+plt.title('Correlation Matrix of Energy Consumption Variables')
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+
+# Відображення графіка
+plt.show()
+
+# Визначаємо межі для аномалій за допомогою статистики
+q1 = df_sample['Global_active_power'].quantile(0.25)  # Перший квартиль (25%)
+q3 = df_sample['Global_active_power'].quantile(0.75)  # Третій квартиль (75%)
+iqr = q3 - q1  # Міжквартильний розмах
+
+# Визначаємо межі аномалій
+lower_bound = q1 - 1.5 * iqr
+upper_bound = q3 + 1.5 * iqr
+
+# Відбираємо аномальні значення
+anomalies = df_sample[(df_sample['Global_active_power'] < lower_bound) | 
+                      (df_sample['Global_active_power'] > upper_bound)]
+
+# Вивід у консоль
+print(f"Number of anomalies detected: {len(anomalies)}")
+print(anomalies[['Datetime', 'Global_active_power']].head())
+
+# Візуалізація аномалій на графіку
+plt.figure(figsize=(12, 6))
+plt.plot(df_sample['Datetime'], df_sample['Global_active_power'], label='Normal Consumption', color='blue', alpha=0.5)
+plt.scatter(anomalies['Datetime'], anomalies['Global_active_power'], color='red', label='Anomalies', marker='o')
+
+# Налаштування графіка
+plt.xlabel('Date')
+plt.ylabel('Power Consumption (kW)')
+plt.title('Anomalies in Power Consumption')
+plt.legend()
+plt.xticks(rotation=45)
+
+# Відображення графіка
+plt.show()
+
+# Побудова графіка розсіяння для активної та реактивної потужності
+plt.figure(figsize=(8, 6))
+plt.scatter(df_sample['Global_active_power'], df_sample['Global_reactive_power'], alpha=0.5, color='purple')
+
+# Налаштування графіка
+plt.xlabel('Global Active Power (kW)')
+plt.ylabel('Global Reactive Power (kW)')
+plt.title('Relationship Between Active and Reactive Power')
+plt.grid(True)
+
+# Відображення графіка
+plt.show()
+
+# Створюємо ковзне середнє для прогнозування (7-годинне середнє)
+df_sample['Moving_Avg'] = df_sample['Global_active_power'].rolling(window=7).mean()
+
+# Побудова графіка прогнозу споживання
+plt.figure(figsize=(12, 6))
+plt.plot(df_sample['Datetime'], df_sample['Global_active_power'], label='Actual Consumption', color='blue', alpha=0.5)
+plt.plot(df_sample['Datetime'], df_sample['Moving_Avg'], label='7-Hour Moving Avg', color='red', linestyle='dashed')
+
+# Налаштування графіка
+plt.xlabel('Date')
+plt.ylabel('Power Consumption (kW)')
+plt.title('Power Consumption Forecast Using Moving Average')
+plt.legend()
+plt.xticks(rotation=45)
+
+# Відображення графіка
+plt.show()
